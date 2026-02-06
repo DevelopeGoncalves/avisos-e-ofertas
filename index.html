@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Escala IBNV - Admin Dinâmico</title>
+    <title>Escala Dízimos e Ofertas</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -114,8 +114,12 @@
         
         .aviso-edit-row { background: #f9fafb; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #e5e7eb; position: relative; }
         .btn-remove-aviso { position: absolute; top: 10px; right: 10px; background: #fee2e2; color: #ef4444; border: none; width: 25px; height: 25px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; }
+        
         .btn-add-aviso { width: 100%; padding: 12px; background: #ECFDF5; color: #059669; border: 1px dashed #10B981; border-radius: 12px; font-weight: 600; cursor: pointer; margin-bottom: 20px; transition: 0.2s; }
         .btn-add-aviso:hover { background: #D1FAE5; }
+
+        .date-input-group label { font-size: 0.75rem; color: #666; font-weight: bold; margin-bottom: 5px; display: block; }
+        .date-input-group input { border-color: #4F46E5; background: #EEF2FF; }
 
         .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px; pt-3; border-top: 1px solid #eee; }
         .btn-cancel { background: #f3f4f6; color: #666; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
@@ -128,8 +132,8 @@
 
     <div class="header">
         <button class="login-btn" onclick="openLoginModal()" id="btn-login-header">🔒 Área do Líder</button>
-        <h1>Ministério de Louvor</h1>
-        <h2>ESCALA FEVEREIRO 2026</h2>
+        <h1>Ministério de Dízimos e Ofertas</h1>
+        <h2 id="month-title">CARREGANDO...</h2>
     </div>
 
     <div class="container">
@@ -162,22 +166,22 @@
 
     <div class="modal-overlay" id="modal-avisos">
         <div class="modal">
-            <h3>📢 Editar Avisos</h3>
+            <h3>📢 Editar Avisos Globais</h3>
+            <p style="font-size:0.8rem; color:#666; margin-bottom:15px;">Defina a validade. O aviso aparecerá em todos os cultos até a data escolhida.</p>
             <div id="avisos-container"></div>
-            <button class="btn-add-aviso" onclick="addNewAvisoField()">+ Adicionar Novo Aviso</button>
+            <button class="btn-add-aviso" onclick="addNewAvisoField()">+ Adicionar Aviso</button>
             <div class="modal-actions">
                 <button class="btn-cancel" onclick="closeModal('modal-avisos')">Cancelar</button>
-                <button class="btn-confirm" onclick="saveAvisos()">Salvar Tudo</button>
+                <button class="btn-confirm" onclick="saveAvisos()">Salvar Avisos</button>
             </div>
         </div>
     </div>
 
     <script>
         // ========================
-        // 1. CONFIGURAÇÃO
+        // 1. CONFIGURAÇÃO FIREBASE
         // ========================
         const firebaseConfig = {
-            // --- COLE SUAS CHAVES AQUI ---
             apiKey: "SUA_API_KEY",
             authDomain: "SEU_PROJETO.firebaseapp.com",
             projectId: "SEU_PROJETO_ID",
@@ -185,100 +189,96 @@
             messagingSenderId: "NUMERO",
             appId: "ID_DO_APP"
         };
-
-        try {
-            firebase.initializeApp(firebaseConfig);
-        } catch(e) { console.log("Configuração Firebase pendente"); }
-        
+        try { firebase.initializeApp(firebaseConfig); } catch(e) { }
         const db = firebase.firestore ? firebase.firestore() : null;
 
         // ========================
-        // 2. DADOS (ATUALIZADOS)
+        // 2. DADOS
         // ========================
         let isAdmin = false;
         const ADMIN_PASS = "1234";
 
-        // Mapeamento de fotos (Novos nomes adicionados)
+        const dirigentesPermitidos = ['Daniel', 'Alex', 'Delson', 'Alberto'];
         const photoMap = {
-            'Daniel': 'img/daniel.jpg',
-            'Alex': 'img/alex.jpg',
-            'Delson': 'img/delson.jpg',
-            'Alberto': 'img/alberto.jpg',
-            // Mantendo ofertas para variar
-            'João': 'img/joao.jpg', 'Alan': 'img/alan.jpg', 
-            'Zé Carlos': 'img/zecarlos.jpg', 'Anselmo': 'img/anselmo.jpg',
-            'Luziene': 'img/luziene.jpg', 'Maurício': 'img/mauricio.jpg',
-            'Tarcísio': 'img/tarcisio.jpg', 'Rhuam': 'img/rhuam.jpg', 
-            'Rosângela': 'img/rosangela.jpg', 'Penha': 'img/penha.jpg'
+            'Daniel': 'img/daniel.jpg', 'Alex': 'img/alex.jpg', 'Delson': 'img/delson.jpg', 'Alberto': 'img/alberto.jpg',
+            'João': 'img/joao.jpg', 'Alan': 'img/alan.jpg', 'Zé Carlos': 'img/zecarlos.jpg', 'Anselmo': 'img/anselmo.jpg',
+            'Luziene': 'img/luziene.jpg', 'Maurício': 'img/mauricio.jpg', 'Tarcísio': 'img/tarcisio.jpg', 
+            'Rhuam': 'img/rhuam.jpg', 'Rosângela': 'img/rosangela.jpg', 'Penha': 'img/penha.jpg'
         };
 
+        // Dados Iniciais
         let avisosData = [
-            { id: 1, titulo: 'SÉRIE DEUS PROVEDOR', info: 'Todas as Quintas-Feiras às 19h30.' },
-            { id: 2, titulo: 'EBD DINÂMICA', info: 'Março 2026, das 08h às 09h30.' }
+            { id: 1, titulo: 'SÉRIE DEUS PROVEDOR', info: 'Todas as Quintas-Feiras às 19h30.', validade: '2026-02-28' },
+            { id: 2, titulo: 'EBD DINÂMICA', info: 'Março 2026, das 08h às 09h30.', validade: '2026-03-31' }
         ];
 
-        // LOGICA DE ESCALA: Domingo repete na Quinta
         let escalaData = [
-            // SEMANA 1 - Daniel
             { id: 'culto1', date: '01/02', day: 'Domingo', dirigente: 'Daniel', services: [{ type: 'Oferta Manhã', person: 'João' }, { type: 'Oferta Noite', person: 'Alan' }]},
             { id: 'culto2', date: '05/02', day: 'Quinta-feira', dirigente: 'Daniel', services: [{ type: 'Oferta', person: 'Penha' }]},
-            
-            // SEMANA 2 - Alex
             { id: 'culto3', date: '08/02', day: 'Domingo', dirigente: 'Alex', services: [{ type: 'Oferta Manhã', person: 'Alan' }, { type: 'Oferta Noite', person: 'Zé Carlos' }]},
             { id: 'culto4', date: '12/02', day: 'Quinta-feira', dirigente: 'Alex', services: [{ type: 'Oferta', person: 'Rhuam' }]},
-            
-            // SEMANA 3 - Delson
             { id: 'culto5', date: '15/02', day: 'Domingo', dirigente: 'Delson', services: [{ type: 'Oferta Manhã', person: 'Anselmo' }, { type: 'Oferta Noite', person: 'Luziene' }]},
             { id: 'culto6', date: '19/02', day: 'Quinta-feira', dirigente: 'Delson', services: [{ type: 'Oferta', person: 'Maurício' }]},
-            
-            // SEMANA 4 - Alberto
             { id: 'culto7', date: '22/02', day: 'Domingo', dirigente: 'Alberto', services: [{ type: 'Oferta Manhã', person: 'Maurício' }, { type: 'Oferta Noite', person: 'Tarcísio' }]},
             { id: 'culto8', date: '26/02', day: 'Quinta-feira', dirigente: 'Alberto', services: [{ type: 'Oferta', person: 'Rosângela' }]}
         ];
 
         // ========================
-        // 3. CARREGAR DADOS
+        // 3. CARREGAR
         // ========================
         function loadData() {
-            if(!db) { render(); return; }
-
-            db.collection("escala").orderBy("date").onSnapshot((snapshot) => {
-                if (!snapshot.empty) {
-                    escalaData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    render();
-                } else {
-                    escalaData.forEach(item => db.collection("escala").doc(item.id).set(item));
-                }
+            if(!db) { render(); updateHeaderMonth(); return; }
+            db.collection("escala").orderBy("date").onSnapshot((s) => {
+                if(!s.empty) { escalaData = s.docs.map(d => ({id:d.id, ...d.data()})); }
+                else { escalaData.forEach(i => db.collection("escala").doc(i.id).set(i)); }
+                render();
+                updateHeaderMonth(); // Atualiza o título quando os dados chegam
             });
-
-            db.collection("avisos").doc("geral").onSnapshot((doc) => {
-                if (doc.exists) {
-                    avisosData = doc.data().items;
-                    render();
-                } else {
-                    db.collection("avisos").doc("geral").set({ items: avisosData });
-                }
+            db.collection("avisos").doc("geral").onSnapshot((d) => {
+                if(d.exists) { avisosData = d.data().items; }
+                else { db.collection("avisos").doc("geral").set({items:avisosData}); }
+                render();
             });
         }
 
         // ========================
-        // 4. RENDER
+        // 4. LÓGICA DO MÊS AUTOMÁTICO
         // ========================
-        function getInitials(name) { return name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase(); }
-        function getAvatar(name, bgStyle) {
-            const path = photoMap[name];
-            if(path) return `<div class="role-icon" style="background: ${bgStyle}"><img src="${path}" onerror="this.style.display='none'; this.parentNode.innerText='${getInitials(name)}'"></div>`;
-            return `<div class="role-icon" style="background: ${bgStyle}">${getInitials(name)}</div>`;
+        function updateHeaderMonth() {
+            if(escalaData.length === 0) return;
+            
+            // Pega o primeiro item da lista para definir o mês da escala
+            const firstItem = escalaData[0];
+            const [d, m] = firstItem.date.split('/');
+            
+            const meses = ['JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO', 'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO'];
+            const nomeMes = meses[parseInt(m) - 1];
+            
+            // Define o título automaticamente
+            document.getElementById('month-title').innerText = `ESCALA ${nomeMes} 2026`;
+        }
+
+        // ========================
+        // 5. RENDER
+        // ========================
+        function getInitials(n) { return n.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase(); }
+        function getAvatar(n, bg) {
+            const p = photoMap[n];
+            if(p) return `<div class="role-icon" style="background:${bg}"><img src="${p}" onerror="this.style.display='none';this.parentNode.innerText='${getInitials(n)}'"></div>`;
+            return `<div class="role-icon" style="background:${bg}">${getInitials(n)}</div>`;
+        }
+
+        function parseCultoDate(dateStr) {
+            const [d, m] = dateStr.split('/');
+            return new Date(2026, parseInt(m)-1, parseInt(d));
         }
 
         function render() {
             const container = document.getElementById('schedule-container');
-            const today = new Date();
-            today.setHours(0,0,0,0);
+            const today = new Date(); today.setHours(0,0,0,0);
 
-            const html = escalaData.map((item, index) => {
-                const [d, m] = item.date.split('/');
-                const itemDate = new Date(2026, parseInt(m)-1, parseInt(d));
+            const html = escalaData.map((item) => {
+                const itemDate = parseCultoDate(item.date);
                 const isToday = itemDate.getTime() === today.getTime();
                 const isPast = itemDate < today;
                 const isSunday = item.day.toLowerCase().includes('domingo');
@@ -297,35 +297,53 @@
                     </div>
                 `;
 
-                item.services.forEach((serv, servIndex) => {
+                item.services.forEach((serv, idx) => {
                     rolesHtml += `
                         <div class="role-card">
                             ${getAvatar(serv.person, stdBg)}
                             <div class="role-info"><h4>${serv.type}</h4><p>${serv.person}</p></div>
-                            <button class="edit-swap-btn" style="${editStyle}" onclick="openSwapModal('${item.id}', 'service', ${servIndex}, '${serv.person}', '${item.date}')">✏️</button>
+                            <button class="edit-swap-btn" style="${editStyle}" onclick="openSwapModal('${item.id}', 'service', ${idx}, '${serv.person}', '${item.date}')">✏️</button>
                         </div>
                     `;
                 });
 
                 let avisosHtml = '';
                 if (!isPast) {
-                    const listaDetalhes = avisosData.map(av => 
-                        `<div class="detail-row"><span class="detail-title">${av.id}) ${av.titulo}</span><span class="detail-text">- ${av.info}</span></div>`
-                    ).join('');
+                    const avisosDoDia = avisosData.filter(aviso => {
+                        if(!aviso.validade) return true;
+                        const dataValidade = new Date(aviso.validade);
+                        dataValidade.setHours(23, 59, 59, 999); 
+                        return itemDate <= dataValidade;
+                    });
 
-                    avisosHtml = `
-                        <div class="avisos-box">
-                            <button class="edit-avisos-btn" style="${editStyle}" onclick="openAvisosModal()">✏️ Editar Avisos</button>
-                            <button class="avisos-btn" onclick="toggleScript(this)"><span>📋 AVISOS</span><span>▼</span></button>
-                            <div class="avisos-content">${listaDetalhes}</div>
-                        </div>
-                    `;
+                    if (avisosDoDia.length > 0) {
+                        const listaDetalhes = avisosDoDia.map(av => 
+                            `<div class="detail-row"><span class="detail-title">${av.id}) ${av.titulo}</span><span class="detail-text">- ${av.info}</span></div>`
+                        ).join('');
+
+                        const monthNames = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
+                        const currentMonthName = monthNames[parseInt(item.date.split('/')[1]) - 1];
+
+                        avisosHtml = `
+                            <div class="avisos-box">
+                                <button class="edit-avisos-btn" style="${editStyle}" onclick="openAvisosModal()">✏️ Editar Avisos</button>
+                                <button class="avisos-btn" onclick="toggleScript(this)"><span>📋 AVISOS (${avisosDoDia.length})</span><span>▼</span></button>
+                                <div class="avisos-content">${listaDetalhes}</div>
+                            </div>
+                        `;
+                    } else {
+                        avisosHtml = isAdmin ? `<div class="avisos-box"><button class="edit-avisos-btn" style="display:flex; position:relative; top:0; width:100%; justify-content:center;" onclick="openAvisosModal()">✏️ Nenhum aviso ativo. Criar?</button></div>` : '';
+                    }
                 }
+
+                const [d, m] = item.date.split('/');
+                const monthNames = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
+                const shortMonth = monthNames[parseInt(m) - 1];
 
                 return `
                     <div class="card ${themeClass} ${statusClass}">
                         <div class="card-header-flex">
-                            <div class="date-display"><span class="date-day">${d}</span><span class="date-month">FEV</span></div>
+                            <div class="date-display"><span class="date-day">${d}</span><span class="date-month">${shortMonth}</span></div>
                             <div class="day-title"><h3>${item.day}</h3><span>Culto de Adoração</span></div>
                         </div>
                         <div class="roles-container">${rolesHtml}</div>
@@ -338,15 +356,14 @@
         }
 
         function toggleScript(btn) {
-            const content = btn.nextElementSibling;
-            content.classList.toggle('open');
-            btn.querySelector('span:last-child').innerHTML = content.classList.contains('open') ? '▲' : '▼';
+            const c = btn.nextElementSibling;
+            c.classList.toggle('open');
+            btn.querySelector('span:last-child').innerHTML = c.classList.contains('open') ? '▲' : '▼';
         }
 
         // ========================
-        // 5. FUNÇÕES DE EDIÇÃO
+        // 6. FUNÇÕES DE EDIÇÃO
         // ========================
-        
         function openLoginModal() { document.getElementById('modal-login').style.display = 'flex'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         
@@ -360,13 +377,15 @@
             } else { alert("Senha incorreta!"); }
         }
 
-        // TROCA DE ESCALA
+        // SWAP
         let currentSwap = null;
         function openSwapModal(docId, type, index, currentName, date) {
             currentSwap = { docId, type, index };
             document.getElementById('swap-info').innerHTML = `Trocar <strong>${currentName}</strong> no dia ${date}?`;
             const select = document.getElementById('swap-select');
-            select.innerHTML = Object.keys(photoMap).map(name => `<option value="${name}" ${name === currentName ? 'selected' : ''}>${name}</option>`).join('');
+            
+            let optionsList = (type === 'dirigente') ? dirigentesPermitidos : Object.keys(photoMap);
+            select.innerHTML = optionsList.map(name => `<option value="${name}" ${name === currentName ? 'selected' : ''}>${name}</option>`).join('');
             document.getElementById('modal-swap').style.display = 'flex';
         }
 
@@ -375,30 +394,32 @@
             const item = escalaData.find(i => i.id === currentSwap.docId);
             if (currentSwap.type === 'dirigente') item.dirigente = newName;
             else item.services[currentSwap.index].person = newName;
-
             if(db) db.collection("escala").doc(currentSwap.docId).update(item);
             closeModal('modal-swap');
             render();
         }
 
-        // AVISOS DINÂMICOS
+        // AVISOS
         function openAvisosModal() {
             const container = document.getElementById('avisos-container');
             container.innerHTML = ''; 
-            avisosData.forEach(av => { createAvisoInput(av.titulo, av.info); });
+            avisosData.forEach(av => { createAvisoInput(av.titulo, av.info, av.validade); });
             document.getElementById('modal-avisos').style.display = 'flex';
         }
 
-        function createAvisoInput(titulo = '', info = '') {
+        function createAvisoInput(titulo = '', info = '', validade = '') {
             const container = document.getElementById('avisos-container');
             const div = document.createElement('div');
             div.className = 'aviso-edit-row';
+            if(!validade) { const d = new Date(); d.setMonth(d.getMonth() + 1); validade = d.toISOString().split('T')[0]; }
+
             div.innerHTML = `
                 <button class="btn-remove-aviso" onclick="this.parentElement.remove()">🗑️</button>
-                <label style="font-size:0.8rem; color:#666; display:block; margin-bottom:4px;">Título</label>
-                <input type="text" class="input-titulo" value="${titulo}" placeholder="Título">
-                <label style="font-size:0.8rem; color:#666; display:block; margin-bottom:4px;">Informação</label>
+                <label style="font-size:0.8rem; color:#666; font-weight:bold;">Título</label>
+                <input type="text" class="input-titulo" value="${titulo}" placeholder="Ex: SÉRIE JONAS">
+                <label style="font-size:0.8rem; color:#666; font-weight:bold;">Informação</label>
                 <textarea class="input-info" rows="2" placeholder="Detalhes">${info}</textarea>
+                <div class="date-input-group"><label>📅 Mostrar até quando?</label><input type="date" class="input-validade" value="${validade}"></div>
             `;
             container.appendChild(div);
         }
@@ -416,9 +437,8 @@
             rows.forEach((row, index) => {
                 const titulo = row.querySelector('.input-titulo').value;
                 const info = row.querySelector('.input-info').value;
-                if(titulo.trim() || info.trim()) {
-                    novosAvisos.push({ id: index + 1, titulo: titulo, info: info });
-                }
+                const validade = row.querySelector('.input-validade').value;
+                if(titulo.trim() || info.trim()) { novosAvisos.push({ id: index + 1, titulo, info, validade }); }
             });
             avisosData = novosAvisos;
             if(db) db.collection("avisos").doc("geral").update({ items: novosAvisos });
