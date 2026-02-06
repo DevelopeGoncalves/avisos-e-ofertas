@@ -84,7 +84,7 @@
         
         .role-icon { width: 45px; height: 45px; border-radius: 14px; margin-right: 12px; overflow: hidden; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; font-size: 0.9rem; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .role-icon img { width: 100%; height: 100%; object-fit: cover; }
-        .role-info h4 { font-size: 0.75rem; text-transform: uppercase; color: var(--text-light); }
+        .role-info h4 { font-size: 0.75rem; text-transform: uppercase; color: var(--text-light); letter-spacing: 0.5px; }
         .role-info p { font-size: 1rem; font-weight: 600; color: var(--text-main); }
 
         /* EDIT BUTTONS */
@@ -125,7 +125,25 @@
         .btn-cancel { background: #f3f4f6; color: #666; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
         .btn-confirm { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
 
-        .footer { text-align: center; margin-top: 50px; opacity: 0.7; font-size: 0.9rem; }
+        /* FOOTER & CREDITS */
+        .footer { text-align: center; margin-top: 50px; padding: 20px; opacity: 0.9; }
+        .footer p { margin-bottom: 5px; color: #6B7280; font-size: 0.9rem; }
+        
+        .credits {
+            margin-top: 12px;
+            font-size: 0.8rem !important;
+            color: #9CA3AF !important;
+        }
+        .credits a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+        .credits a:hover {
+            color: #4338CA;
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -138,7 +156,13 @@
 
     <div class="container">
         <div id="schedule-container"></div>
-        <div class="footer"><p>Igreja Batista Nova Vida</p></div>
+        
+        <div class="footer">
+            <p>Igreja Batista Nova Vida</p>
+            <p class="credits">
+                Desenvolvido por <a href="https://victorinoeng.com.br/" target="_blank">victorino.eng</a>
+            </p>
+        </div>
     </div>
 
     <div class="modal-overlay" id="modal-login">
@@ -198,7 +222,7 @@
         let isAdmin = false;
         const ADMIN_PASS = "1234";
 
-        const dirigentesPermitidos = ['Daniel', 'Alex', 'Delson', 'Alberto'];
+        const coordenadoresPermitidos = ['Daniel', 'Alex', 'Delson', 'Alberto'];
         const photoMap = {
             'Daniel': 'img/daniel.jpg', 'Alex': 'img/alex.jpg', 'Delson': 'img/delson.jpg', 'Alberto': 'img/alberto.jpg',
             'João': 'img/joao.jpg', 'Alan': 'img/alan.jpg', 'Zé Carlos': 'img/zecarlos.jpg', 'Anselmo': 'img/anselmo.jpg',
@@ -232,7 +256,7 @@
                 if(!s.empty) { escalaData = s.docs.map(d => ({id:d.id, ...d.data()})); }
                 else { escalaData.forEach(i => db.collection("escala").doc(i.id).set(i)); }
                 render();
-                updateHeaderMonth(); // Atualiza o título quando os dados chegam
+                updateHeaderMonth();
             });
             db.collection("avisos").doc("geral").onSnapshot((d) => {
                 if(d.exists) { avisosData = d.data().items; }
@@ -242,19 +266,14 @@
         }
 
         // ========================
-        // 4. LÓGICA DO MÊS AUTOMÁTICO
+        // 4. MÊS AUTOMÁTICO
         // ========================
         function updateHeaderMonth() {
             if(escalaData.length === 0) return;
-            
-            // Pega o primeiro item da lista para definir o mês da escala
             const firstItem = escalaData[0];
             const [d, m] = firstItem.date.split('/');
-            
             const meses = ['JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO', 'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO'];
             const nomeMes = meses[parseInt(m) - 1];
-            
-            // Define o título automaticamente
             document.getElementById('month-title').innerText = `ESCALA ${nomeMes} 2026`;
         }
 
@@ -292,7 +311,10 @@
                 let rolesHtml = `
                     <div class="role-card dirigente">
                         ${getAvatar(item.dirigente, dirBg)}
-                        <div class="role-info"><h4>⭐ Dirigente</h4><p>${item.dirigente}</p></div>
+                        <div class="role-info">
+                            <h4>⭐ Coordenador do Culto</h4>
+                            <p style="color: #6D28D9; font-size: 1.1rem; font-weight: 700;">${item.dirigente}</p>
+                        </div>
                         <button class="edit-swap-btn" style="${editStyle}" onclick="openSwapModal('${item.id}', 'dirigente', 0, '${item.dirigente}', '${item.date}')">✏️</button>
                     </div>
                 `;
@@ -320,9 +342,6 @@
                         const listaDetalhes = avisosDoDia.map(av => 
                             `<div class="detail-row"><span class="detail-title">${av.id}) ${av.titulo}</span><span class="detail-text">- ${av.info}</span></div>`
                         ).join('');
-
-                        const monthNames = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
-                        const currentMonthName = monthNames[parseInt(item.date.split('/')[1]) - 1];
 
                         avisosHtml = `
                             <div class="avisos-box">
@@ -384,7 +403,7 @@
             document.getElementById('swap-info').innerHTML = `Trocar <strong>${currentName}</strong> no dia ${date}?`;
             const select = document.getElementById('swap-select');
             
-            let optionsList = (type === 'dirigente') ? dirigentesPermitidos : Object.keys(photoMap);
+            let optionsList = (type === 'dirigente') ? coordenadoresPermitidos : Object.keys(photoMap);
             select.innerHTML = optionsList.map(name => `<option value="${name}" ${name === currentName ? 'selected' : ''}>${name}</option>`).join('');
             document.getElementById('modal-swap').style.display = 'flex';
         }
