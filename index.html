@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escala IBNV 2026</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-body: #F0F2F5;
+            --card-bg: #FFFFFF;
+            --text-main: #2D3748;
+            --text-light: #718096;
+            --grad-header: linear-gradient(135deg, #4158D0 0%, #C850C0 46%, #FFCC70 100%);
+            --grad-sunday: linear-gradient(135deg, #FF9966 0%, #FF5E62 100%);
+            --grad-thursday: linear-gradient(135deg, #56CCF2 0%, #2F80ED 100%);
+            --radius-lg: 24px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            padding-bottom: 60px;
+            background-image: radial-gradient(circle at 10% 20%, rgba(200, 80, 192, 0.05) 0%, transparent 20%), radial-gradient(circle at 90% 80%, rgba(65, 88, 208, 0.05) 0%, transparent 20%);
+        }
+
+        .header {
+            background: var(--grad-header);
+            padding: 50px 20px 70px;
+            text-align: center;
+            border-radius: 0 0 40px 40px;
+            color: white;
+            box-shadow: 0 15px 30px -10px rgba(200, 80, 192, 0.4);
+            margin-bottom: -40px;
+            position: relative;
+        }
+
+        .header h1 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.8rem; font-weight: 800; margin-bottom: 5px; }
+        .header h2 { font-size: 1rem; opacity: 0.9; font-weight: 500; letter-spacing: 1px;}
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 20px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255,255,255,0.8);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; }
+        .card.theme-domingo::after { background: var(--grad-sunday); }
+        .card.theme-quinta::after { background: var(--grad-thursday); }
+
+        .card.today { border: 2px solid #00C9A7; background: linear-gradient(to bottom, #ffffff, #f0fdf9); }
+        .card.today::before { 
+            content: 'HOJE'; position: absolute; top: 15px; right: 15px; 
+            background: #00C9A7; color: white; font-size: 0.7rem; font-weight: 700; 
+            padding: 4px 12px; border-radius: 20px; 
+        }
+        .card.past { opacity: 0.6; filter: grayscale(1); }
+
+        .card-header-flex { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+        .date-display { 
+            width: 60px; height: 60px; border-radius: 18px; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            font-weight: 800; line-height: 1; 
+        }
+        .card.theme-domingo .date-display { background: rgba(255, 94, 98, 0.1); color: #FF5E62; }
+        .card.theme-quinta .date-display { background: rgba(47, 128, 237, 0.1); color: #2F80ED; }
+        
+        .date-day { font-size: 1.4rem; font-family: 'Plus Jakarta Sans', sans-serif; }
+        .date-month { font-size: 0.7rem; text-transform: uppercase; margin-top: 2px; }
+        .day-title h3 { font-size: 1.2rem; font-weight: 700; color: var(--text-main); }
+        .day-title span { font-size: 0.9rem; color: var(--text-light); }
+
+        .roles-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; }
+        
+        .role-card { 
+            display: flex; align-items: center; padding: 12px; 
+            border-radius: 16px; background: #F7FAFC; border: 1px solid #EDF2F7; 
+        }
+        .role-card.dirigente { background: #FFF8E1; border-color: #FFE082; }
+
+        .role-icon {
+            width: 45px; height: 45px; border-radius: 14px; 
+            margin-right: 12px; overflow: hidden; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; color: white; font-size: 0.9rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .role-icon img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .role-info h4 { font-size: 0.75rem; text-transform: uppercase; color: var(--text-light); }
+        .role-info p { font-size: 1rem; font-weight: 600; color: var(--text-main); }
+
+        /* --- AVISOS LIMPOS --- */
+        .avisos-box { margin-top: 25px; border-top: 2px dashed #E2E8F0; padding-top: 15px; }
+        
+        .avisos-btn {
+            width: 100%; padding: 12px; background: #EEF2FF; color: #4F46E5;
+            border: none; border-radius: 12px; font-weight: 700; cursor: pointer;
+            display: flex; justify-content: space-between; align-items: center;
+            transition: background 0.2s;
+        }
+        .avisos-btn:hover { background: #E0E7FF; }
+
+        .avisos-content { 
+            max-height: 0; overflow: hidden; transition: max-height 0.4s ease;
+            background: #F8FAFC; border-radius: 0 0 12px 12px;
+        }
+        .avisos-content.open { max-height: 800px; padding: 15px; border: 1px solid #E2E8F0; border-top: none; }
+
+        /* Linha única de aviso */
+        .detail-row {
+            padding: 10px 0;
+            border-bottom: 1px solid #E2E8F0;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            display: flex;
+            flex-direction: column; /* Em telas muito pequenas quebra linha, senão mantém */
+        }
+        @media(min-width: 400px) {
+            .detail-row { flex-direction: row; align-items: baseline; }
+        }
+        
+        .detail-row:last-child { border-bottom: none; padding-bottom: 0; }
+        
+        .detail-title {
+            color: #4338CA;
+            font-weight: 800;
+            margin-right: 6px;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            white-space: nowrap; /* Título não quebra linha */
+        }
+        
+        .detail-text {
+            color: #475569;
+        }
+
+        .footer { text-align: center; margin-top: 50px; opacity: 0.7; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Ministério de Louvor</h1>
+        <h2>ESCALA FEVEREIRO 2026</h2>
+    </div>
+
+    <div class="container">
+        <div id="schedule-container"></div>
+        <div class="footer">
+            <p>Igreja Batista Nova Vida</p>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURAÇÃO DAS FOTOS
+        const photoMap = {
+            'João': 'img/joao.jpg',
+            'Alan': 'img/alan.jpg',
+            'Penha': 'img/penha.jpg',
+            'Zé Carlos': 'img/zecarlos.jpg',
+            'Anselmo': 'img/anselmo.jpg',
+            'Luziene': 'img/luziene.jpg',
+            'Maurício': 'img/mauricio.jpg',
+            'Tarcísio': 'img/tarcisio.jpg',
+            'Rhuam': 'img/rhuam.jpg',
+            'Alex': 'img/alex.jpg',
+            'Rosângela': 'img/rosangela.jpg'
+        };
+
+        // LISTA DE AVISOS
+        const avisosGerais = [
+            { id: 1, titulo: 'SÉRIE DEUS PROVEDOR', info: 'Todas as Quintas-Feiras às 19h30.' },
+            { id: 2, titulo: 'EBD DINÂMICA', info: 'Março 2026, das 08h às 09h30.' },
+            { id: 3, titulo: 'CURSOS IBNV 2026', info: 'Inscrições abertas na secretaria.' }
+        ];
+
+        // ESCALA
+        const escala = [
+            { date: '01/02', day: 'Domingo', dirigente: 'João', services: [{ type: 'Oferta Manhã', person: 'João' }, { type: 'Oferta Noite', person: 'Alan' }]},
+            { date: '05/02', day: 'Quinta-feira', dirigente: 'Penha', services: [{ type: 'Oferta', person: 'Penha' }]},
+            { date: '08/02', day: 'Domingo', dirigente: 'Alan', services: [{ type: 'Oferta Manhã', person: 'Alan' }, { type: 'Oferta Noite', person: 'Zé Carlos' }]},
+            { date: '12/02', day: 'Quinta-feira', dirigente: 'Rhuam', services: [{ type: 'Oferta', person: 'Rhuam' }]},
+            { date: '15/02', day: 'Domingo', dirigente: 'Anselmo', services: [{ type: 'Oferta Manhã', person: 'Anselmo' }, { type: 'Oferta Noite', person: 'Luziene' }]},
+            { date: '19/02', day: 'Quinta-feira', dirigente: 'Alex', services: [{ type: 'Oferta', person: 'Alex' }]},
+            { date: '22/02', day: 'Domingo', dirigente: 'Maurício', services: [{ type: 'Oferta Manhã', person: 'Maurício' }, { type: 'Oferta Noite', person: 'Tarcísio' }]},
+            { date: '26/02', day: 'Quinta-feira', dirigente: 'Rosângela', services: [{ type: 'Oferta', person: 'Rosângela' }]}
+        ];
+
+        function getInitials(name) {
+            return name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
+        }
+
+        function getAvatar(name, bgStyle) {
+            const path = photoMap[name];
+            if(path) {
+                return `<div class="role-icon" style="background: ${bgStyle}">
+                            <img src="${path}" onerror="this.style.display='none'; this.parentNode.innerText='${getInitials(name)}'">
+                        </div>`;
+            }
+            return `<div class="role-icon" style="background: ${bgStyle}">${getInitials(name)}</div>`;
+        }
+
+        function render() {
+            const container = document.getElementById('schedule-container');
+            const today = new Date(2026, 1, 8); // REMOVA ISSO E USE new Date() NA VIDA REAL
+            today.setHours(0,0,0,0);
+
+            const html = escala.map((item) => {
+                const [d, m] = item.date.split('/');
+                const itemDate = new Date(2026, parseInt(m)-1, parseInt(d));
+                const isToday = itemDate.getTime() === today.getTime();
+                const isPast = itemDate < today;
+                const isSunday = item.day.toLowerCase().includes('domingo');
+                
+                const themeClass = isSunday ? 'theme-domingo' : 'theme-quinta';
+                const statusClass = isToday ? 'today' : (isPast ? 'past' : '');
+                
+                const dirBg = isSunday ? 'linear-gradient(135deg, #FFB75E, #ED8F03)' : 'linear-gradient(135deg, #8E2DE2, #4A00E0)';
+                const stdBg = '#CBD5E0; color: #4A5568';
+
+                let rolesHtml = `
+                    <div class="role-card dirigente">
+                        ${getAvatar(item.dirigente, dirBg)}
+                        <div class="role-info">
+                            <h4>⭐ Dirigente</h4>
+                            <p>${item.dirigente}</p>
+                        </div>
+                    </div>
+                `;
+
+                item.services.forEach(serv => {
+                    rolesHtml += `
+                        <div class="role-card">
+                            ${getAvatar(serv.person, stdBg)}
+                            <div class="role-info">
+                                <h4>${serv.type}</h4>
+                                <p>${serv.person}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                let avisosHtml = '';
+                if (!isPast) {
+                    // LIMPEZA: Apenas os detalhes, sem listas duplicadas
+                    const listaDetalhes = avisosGerais.map(av => 
+                        `<div class="detail-row">
+                            <span class="detail-title">${av.id}) ${av.titulo}</span>
+                            <span class="detail-text">- ${av.info}</span>
+                         </div>`
+                    ).join('');
+
+                    avisosHtml = `
+                        <div class="avisos-box">
+                            <button class="avisos-btn" onclick="toggleScript(this)">
+                                <span>📋 AVISOS</span>
+                                <span>▼</span>
+                            </button>
+                            <div class="avisos-content">
+                                ${listaDetalhes}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="card ${themeClass} ${statusClass}">
+                        <div class="card-header-flex">
+                            <div class="date-display">
+                                <span class="date-day">${d}</span>
+                                <span class="date-month">FEV</span>
+                            </div>
+                            <div class="day-title">
+                                <h3>${item.day}</h3>
+                                <span>Culto de Adoração</span>
+                            </div>
+                        </div>
+                        <div class="roles-container">
+                            ${rolesHtml}
+                        </div>
+                        ${avisosHtml}
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = html;
+        }
+
+        function toggleScript(btn) {
+            const content = btn.nextElementSibling;
+            const arrow = btn.querySelector('span:last-child');
+            if (content.classList.contains('open')) {
+                content.classList.remove('open');
+                arrow.innerHTML = '▼';
+            } else {
+                content.classList.add('open');
+                arrow.innerHTML = '▲';
+            }
+        }
+
+        render();
+    </script>
+</body>
+</html>
