@@ -3,17 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Escala IBNV 2026</title>
+    <title>Escala IBNV - Admin Dinâmico</title>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet">
     
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
     <style>
         :root {
             --bg-body: #F0F2F5;
             --card-bg: #FFFFFF;
+            --primary: #4F46E5;
             --text-main: #2D3748;
-            --text-light: #718096;
             --grad-header: linear-gradient(135deg, #4158D0 0%, #C850C0 46%, #FFCC70 100%);
             --grad-sunday: linear-gradient(135deg, #FF9966 0%, #FF5E62 100%);
             --grad-thursday: linear-gradient(135deg, #56CCF2 0%, #2F80ED 100%);
@@ -30,6 +34,7 @@
             background-image: radial-gradient(circle at 10% 20%, rgba(200, 80, 192, 0.05) 0%, transparent 20%), radial-gradient(circle at 90% 80%, rgba(65, 88, 208, 0.05) 0%, transparent 20%);
         }
 
+        /* HEADER */
         .header {
             background: var(--grad-header);
             padding: 50px 20px 70px;
@@ -41,118 +46,80 @@
             position: relative;
         }
 
+        .login-btn {
+            position: absolute; top: 20px; right: 20px;
+            background: rgba(255,255,255,0.2); backdrop-filter: blur(5px);
+            border: 1px solid rgba(255,255,255,0.4); color: white;
+            padding: 8px 16px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; transition: 0.3s;
+        }
+
         .header h1 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.8rem; font-weight: 800; margin-bottom: 5px; }
         .header h2 { font-size: 1rem; opacity: 0.9; font-weight: 500; letter-spacing: 1px;}
 
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 0 20px;
-            position: relative;
-            z-index: 10;
-        }
+        .container { max-width: 800px; margin: 0 auto; padding: 0 20px; position: relative; z-index: 10; }
 
+        /* CARDS */
         .card {
-            background: var(--card-bg);
-            border-radius: var(--radius-lg);
-            padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08);
-            border: 1px solid rgba(255,255,255,0.8);
-            position: relative;
-            overflow: hidden;
+            background: var(--card-bg); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 24px;
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08); border: 1px solid rgba(255,255,255,0.8); position: relative; overflow: hidden;
         }
-
         .card::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; }
         .card.theme-domingo::after { background: var(--grad-sunday); }
         .card.theme-quinta::after { background: var(--grad-thursday); }
-
         .card.today { border: 2px solid #00C9A7; background: linear-gradient(to bottom, #ffffff, #f0fdf9); }
-        .card.today::before { 
-            content: 'HOJE'; position: absolute; top: 15px; right: 15px; 
-            background: #00C9A7; color: white; font-size: 0.7rem; font-weight: 700; 
-            padding: 4px 12px; border-radius: 20px; 
-        }
+        .card.today::before { content: 'HOJE'; position: absolute; top: 15px; right: 15px; background: #00C9A7; color: white; font-size: 0.7rem; font-weight: 700; padding: 4px 12px; border-radius: 20px; }
         .card.past { opacity: 0.6; filter: grayscale(1); }
 
         .card-header-flex { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
-        .date-display { 
-            width: 60px; height: 60px; border-radius: 18px; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            font-weight: 800; line-height: 1; 
-        }
+        .date-display { width: 60px; height: 60px; border-radius: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 800; line-height: 1; }
         .card.theme-domingo .date-display { background: rgba(255, 94, 98, 0.1); color: #FF5E62; }
         .card.theme-quinta .date-display { background: rgba(47, 128, 237, 0.1); color: #2F80ED; }
-        
         .date-day { font-size: 1.4rem; font-family: 'Plus Jakarta Sans', sans-serif; }
         .date-month { font-size: 0.7rem; text-transform: uppercase; margin-top: 2px; }
-        .day-title h3 { font-size: 1.2rem; font-weight: 700; color: var(--text-main); }
-        .day-title span { font-size: 0.9rem; color: var(--text-light); }
 
+        /* ROLES */
         .roles-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; }
-        
-        .role-card { 
-            display: flex; align-items: center; padding: 12px; 
-            border-radius: 16px; background: #F7FAFC; border: 1px solid #EDF2F7; 
-        }
+        .role-card { display: flex; align-items: center; padding: 12px; border-radius: 16px; background: #F7FAFC; border: 1px solid #EDF2F7; position: relative; }
         .role-card.dirigente { background: #FFF8E1; border-color: #FFE082; }
-
-        .role-icon {
-            width: 45px; height: 45px; border-radius: 14px; 
-            margin-right: 12px; overflow: hidden; flex-shrink: 0;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: 700; color: white; font-size: 0.9rem;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        .role-icon img { width: 100%; height: 100%; object-fit: cover; }
         
+        .role-icon { width: 45px; height: 45px; border-radius: 14px; margin-right: 12px; overflow: hidden; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; font-size: 0.9rem; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .role-icon img { width: 100%; height: 100%; object-fit: cover; }
         .role-info h4 { font-size: 0.75rem; text-transform: uppercase; color: var(--text-light); }
         .role-info p { font-size: 1rem; font-weight: 600; color: var(--text-main); }
 
-        /* --- AVISOS LIMPOS --- */
-        .avisos-box { margin-top: 25px; border-top: 2px dashed #E2E8F0; padding-top: 15px; }
-        
-        .avisos-btn {
-            width: 100%; padding: 12px; background: #EEF2FF; color: #4F46E5;
-            border: none; border-radius: 12px; font-weight: 700; cursor: pointer;
-            display: flex; justify-content: space-between; align-items: center;
-            transition: background 0.2s;
-        }
-        .avisos-btn:hover { background: #E0E7FF; }
+        /* EDIT BUTTONS */
+        .edit-swap-btn { display: none; position: absolute; right: 10px; background: #fff; border: 1px solid #ddd; width: 30px; height: 30px; border-radius: 50%; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1); color: #666; }
+        .edit-swap-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
 
-        .avisos-content { 
-            max-height: 0; overflow: hidden; transition: max-height 0.4s ease;
-            background: #F8FAFC; border-radius: 0 0 12px 12px;
-        }
+        /* AVISOS */
+        .avisos-box { margin-top: 25px; border-top: 2px dashed #E2E8F0; padding-top: 15px; position: relative; }
+        .edit-avisos-btn { display: none; position: absolute; top: -15px; right: 0; background: var(--primary); color: white; font-size: 0.7rem; padding: 5px 10px; border-radius: 10px; border: none; cursor: pointer; }
+
+        .avisos-btn { width: 100%; padding: 12px; background: #EEF2FF; color: #4F46E5; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .avisos-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; background: #F8FAFC; border-radius: 0 0 12px 12px; }
         .avisos-content.open { max-height: 800px; padding: 15px; border: 1px solid #E2E8F0; border-top: none; }
+        
+        .detail-row { padding: 10px 0; border-bottom: 1px solid #E2E8F0; font-size: 0.9rem; line-height: 1.4; display: flex; flex-direction: column; }
+        @media(min-width: 400px) { .detail-row { flex-direction: row; align-items: baseline; } }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-title { color: #4338CA; font-weight: 800; margin-right: 6px; text-transform: uppercase; font-size: 0.85rem; white-space: nowrap; }
+        .detail-text { color: #475569; }
 
-        /* Linha única de aviso */
-        .detail-row {
-            padding: 10px 0;
-            border-bottom: 1px solid #E2E8F0;
-            font-size: 0.9rem;
-            line-height: 1.4;
-            display: flex;
-            flex-direction: column; /* Em telas muito pequenas quebra linha, senão mantém */
-        }
-        @media(min-width: 400px) {
-            .detail-row { flex-direction: row; align-items: baseline; }
-        }
+        /* MODAIS */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(3px); z-index: 1000; display: none; align-items: center; justify-content: center; }
+        .modal { background: white; width: 90%; max-width: 500px; padding: 25px; border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.2); max-height: 85vh; overflow-y: auto; }
         
-        .detail-row:last-child { border-bottom: none; padding-bottom: 0; }
+        .modal h3 { margin-bottom: 15px; color: var(--text-main); }
+        .modal input, .modal textarea, .modal select { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 10px; font-family: inherit; }
         
-        .detail-title {
-            color: #4338CA;
-            font-weight: 800;
-            margin-right: 6px;
-            text-transform: uppercase;
-            font-size: 0.85rem;
-            white-space: nowrap; /* Título não quebra linha */
-        }
-        
-        .detail-text {
-            color: #475569;
-        }
+        .aviso-edit-row { background: #f9fafb; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #e5e7eb; position: relative; }
+        .btn-remove-aviso { position: absolute; top: 10px; right: 10px; background: #fee2e2; color: #ef4444; border: none; width: 25px; height: 25px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; }
+        .btn-add-aviso { width: 100%; padding: 12px; background: #ECFDF5; color: #059669; border: 1px dashed #10B981; border-radius: 12px; font-weight: 600; cursor: pointer; margin-bottom: 20px; transition: 0.2s; }
+        .btn-add-aviso:hover { background: #D1FAE5; }
+
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px; pt-3; border-top: 1px solid #eee; }
+        .btn-cancel { background: #f3f4f6; color: #666; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+        .btn-confirm { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
 
         .footer { text-align: center; margin-top: 50px; opacity: 0.7; font-size: 0.9rem; }
     </style>
@@ -160,72 +127,156 @@
 <body>
 
     <div class="header">
+        <button class="login-btn" onclick="openLoginModal()" id="btn-login-header">🔒 Área do Líder</button>
         <h1>Ministério de Louvor</h1>
         <h2>ESCALA FEVEREIRO 2026</h2>
     </div>
 
     <div class="container">
         <div id="schedule-container"></div>
-        <div class="footer">
-            <p>Igreja Batista Nova Vida</p>
+        <div class="footer"><p>Igreja Batista Nova Vida</p></div>
+    </div>
+
+    <div class="modal-overlay" id="modal-login">
+        <div class="modal" style="max-width: 400px;">
+            <h3>🔒 Acesso Restrito</h3>
+            <input type="password" id="admin-pass" placeholder="Senha do Líder">
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeModal('modal-login')">Cancelar</button>
+                <button class="btn-confirm" onclick="checkLogin()">Entrar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-swap">
+        <div class="modal" style="max-width: 400px;">
+            <h3>🔄 Trocar Escala</h3>
+            <p id="swap-info" style="margin-bottom: 15px; font-size: 0.9rem; color: #666;"></p>
+            <select id="swap-select"></select>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeModal('modal-swap')">Cancelar</button>
+                <button class="btn-confirm" onclick="confirmSwap()">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-avisos">
+        <div class="modal">
+            <h3>📢 Editar Avisos</h3>
+            <div id="avisos-container"></div>
+            <button class="btn-add-aviso" onclick="addNewAvisoField()">+ Adicionar Novo Aviso</button>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeModal('modal-avisos')">Cancelar</button>
+                <button class="btn-confirm" onclick="saveAvisos()">Salvar Tudo</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // CONFIGURAÇÃO DAS FOTOS
-        const photoMap = {
-            'João': 'img/joao.jpg',
-            'Alan': 'img/alan.jpg',
-            'Penha': 'img/penha.jpg',
-            'Zé Carlos': 'img/zecarlos.jpg',
-            'Anselmo': 'img/anselmo.jpg',
-            'Luziene': 'img/luziene.jpg',
-            'Maurício': 'img/mauricio.jpg',
-            'Tarcísio': 'img/tarcisio.jpg',
-            'Rhuam': 'img/rhuam.jpg',
-            'Alex': 'img/alex.jpg',
-            'Rosângela': 'img/rosangela.jpg'
+        // ========================
+        // 1. CONFIGURAÇÃO
+        // ========================
+        const firebaseConfig = {
+            // --- COLE SUAS CHAVES AQUI ---
+            apiKey: "SUA_API_KEY",
+            authDomain: "SEU_PROJETO.firebaseapp.com",
+            projectId: "SEU_PROJETO_ID",
+            storageBucket: "SEU_PROJETO.appspot.com",
+            messagingSenderId: "NUMERO",
+            appId: "ID_DO_APP"
         };
 
-        // LISTA DE AVISOS
-        const avisosGerais = [
+        try {
+            firebase.initializeApp(firebaseConfig);
+        } catch(e) { console.log("Configuração Firebase pendente"); }
+        
+        const db = firebase.firestore ? firebase.firestore() : null;
+
+        // ========================
+        // 2. DADOS (ATUALIZADOS)
+        // ========================
+        let isAdmin = false;
+        const ADMIN_PASS = "1234";
+
+        // Mapeamento de fotos (Novos nomes adicionados)
+        const photoMap = {
+            'Daniel': 'img/daniel.jpg',
+            'Alex': 'img/alex.jpg',
+            'Delson': 'img/delson.jpg',
+            'Alberto': 'img/alberto.jpg',
+            // Mantendo ofertas para variar
+            'João': 'img/joao.jpg', 'Alan': 'img/alan.jpg', 
+            'Zé Carlos': 'img/zecarlos.jpg', 'Anselmo': 'img/anselmo.jpg',
+            'Luziene': 'img/luziene.jpg', 'Maurício': 'img/mauricio.jpg',
+            'Tarcísio': 'img/tarcisio.jpg', 'Rhuam': 'img/rhuam.jpg', 
+            'Rosângela': 'img/rosangela.jpg', 'Penha': 'img/penha.jpg'
+        };
+
+        let avisosData = [
             { id: 1, titulo: 'SÉRIE DEUS PROVEDOR', info: 'Todas as Quintas-Feiras às 19h30.' },
-            { id: 2, titulo: 'EBD DINÂMICA', info: 'Março 2026, das 08h às 09h30.' },
-            { id: 3, titulo: 'CURSOS IBNV 2026', info: 'Inscrições abertas na secretaria.' }
+            { id: 2, titulo: 'EBD DINÂMICA', info: 'Março 2026, das 08h às 09h30.' }
         ];
 
-        // ESCALA
-        const escala = [
-            { date: '01/02', day: 'Domingo', dirigente: 'João', services: [{ type: 'Oferta Manhã', person: 'João' }, { type: 'Oferta Noite', person: 'Alan' }]},
-            { date: '05/02', day: 'Quinta-feira', dirigente: 'Penha', services: [{ type: 'Oferta', person: 'Penha' }]},
-            { date: '08/02', day: 'Domingo', dirigente: 'Alan', services: [{ type: 'Oferta Manhã', person: 'Alan' }, { type: 'Oferta Noite', person: 'Zé Carlos' }]},
-            { date: '12/02', day: 'Quinta-feira', dirigente: 'Rhuam', services: [{ type: 'Oferta', person: 'Rhuam' }]},
-            { date: '15/02', day: 'Domingo', dirigente: 'Anselmo', services: [{ type: 'Oferta Manhã', person: 'Anselmo' }, { type: 'Oferta Noite', person: 'Luziene' }]},
-            { date: '19/02', day: 'Quinta-feira', dirigente: 'Alex', services: [{ type: 'Oferta', person: 'Alex' }]},
-            { date: '22/02', day: 'Domingo', dirigente: 'Maurício', services: [{ type: 'Oferta Manhã', person: 'Maurício' }, { type: 'Oferta Noite', person: 'Tarcísio' }]},
-            { date: '26/02', day: 'Quinta-feira', dirigente: 'Rosângela', services: [{ type: 'Oferta', person: 'Rosângela' }]}
+        // LOGICA DE ESCALA: Domingo repete na Quinta
+        let escalaData = [
+            // SEMANA 1 - Daniel
+            { id: 'culto1', date: '01/02', day: 'Domingo', dirigente: 'Daniel', services: [{ type: 'Oferta Manhã', person: 'João' }, { type: 'Oferta Noite', person: 'Alan' }]},
+            { id: 'culto2', date: '05/02', day: 'Quinta-feira', dirigente: 'Daniel', services: [{ type: 'Oferta', person: 'Penha' }]},
+            
+            // SEMANA 2 - Alex
+            { id: 'culto3', date: '08/02', day: 'Domingo', dirigente: 'Alex', services: [{ type: 'Oferta Manhã', person: 'Alan' }, { type: 'Oferta Noite', person: 'Zé Carlos' }]},
+            { id: 'culto4', date: '12/02', day: 'Quinta-feira', dirigente: 'Alex', services: [{ type: 'Oferta', person: 'Rhuam' }]},
+            
+            // SEMANA 3 - Delson
+            { id: 'culto5', date: '15/02', day: 'Domingo', dirigente: 'Delson', services: [{ type: 'Oferta Manhã', person: 'Anselmo' }, { type: 'Oferta Noite', person: 'Luziene' }]},
+            { id: 'culto6', date: '19/02', day: 'Quinta-feira', dirigente: 'Delson', services: [{ type: 'Oferta', person: 'Maurício' }]},
+            
+            // SEMANA 4 - Alberto
+            { id: 'culto7', date: '22/02', day: 'Domingo', dirigente: 'Alberto', services: [{ type: 'Oferta Manhã', person: 'Maurício' }, { type: 'Oferta Noite', person: 'Tarcísio' }]},
+            { id: 'culto8', date: '26/02', day: 'Quinta-feira', dirigente: 'Alberto', services: [{ type: 'Oferta', person: 'Rosângela' }]}
         ];
 
-        function getInitials(name) {
-            return name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
+        // ========================
+        // 3. CARREGAR DADOS
+        // ========================
+        function loadData() {
+            if(!db) { render(); return; }
+
+            db.collection("escala").orderBy("date").onSnapshot((snapshot) => {
+                if (!snapshot.empty) {
+                    escalaData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    render();
+                } else {
+                    escalaData.forEach(item => db.collection("escala").doc(item.id).set(item));
+                }
+            });
+
+            db.collection("avisos").doc("geral").onSnapshot((doc) => {
+                if (doc.exists) {
+                    avisosData = doc.data().items;
+                    render();
+                } else {
+                    db.collection("avisos").doc("geral").set({ items: avisosData });
+                }
+            });
         }
 
+        // ========================
+        // 4. RENDER
+        // ========================
+        function getInitials(name) { return name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase(); }
         function getAvatar(name, bgStyle) {
             const path = photoMap[name];
-            if(path) {
-                return `<div class="role-icon" style="background: ${bgStyle}">
-                            <img src="${path}" onerror="this.style.display='none'; this.parentNode.innerText='${getInitials(name)}'">
-                        </div>`;
-            }
+            if(path) return `<div class="role-icon" style="background: ${bgStyle}"><img src="${path}" onerror="this.style.display='none'; this.parentNode.innerText='${getInitials(name)}'"></div>`;
             return `<div class="role-icon" style="background: ${bgStyle}">${getInitials(name)}</div>`;
         }
 
         function render() {
             const container = document.getElementById('schedule-container');
-            const today = new Date(2026, 1, 8); // REMOVA ISSO E USE new Date() NA VIDA REAL
+            const today = new Date();
             today.setHours(0,0,0,0);
 
-            const html = escala.map((item) => {
+            const html = escalaData.map((item, index) => {
                 const [d, m] = item.date.split('/');
                 const itemDate = new Date(2026, parseInt(m)-1, parseInt(d));
                 const isToday = itemDate.getTime() === today.getTime();
@@ -234,51 +285,39 @@
                 
                 const themeClass = isSunday ? 'theme-domingo' : 'theme-quinta';
                 const statusClass = isToday ? 'today' : (isPast ? 'past' : '');
-                
                 const dirBg = isSunday ? 'linear-gradient(135deg, #FFB75E, #ED8F03)' : 'linear-gradient(135deg, #8E2DE2, #4A00E0)';
                 const stdBg = '#CBD5E0; color: #4A5568';
+                const editStyle = isAdmin ? 'display: flex;' : 'display: none;';
 
                 let rolesHtml = `
                     <div class="role-card dirigente">
                         ${getAvatar(item.dirigente, dirBg)}
-                        <div class="role-info">
-                            <h4>⭐ Dirigente</h4>
-                            <p>${item.dirigente}</p>
-                        </div>
+                        <div class="role-info"><h4>⭐ Dirigente</h4><p>${item.dirigente}</p></div>
+                        <button class="edit-swap-btn" style="${editStyle}" onclick="openSwapModal('${item.id}', 'dirigente', 0, '${item.dirigente}', '${item.date}')">✏️</button>
                     </div>
                 `;
 
-                item.services.forEach(serv => {
+                item.services.forEach((serv, servIndex) => {
                     rolesHtml += `
                         <div class="role-card">
                             ${getAvatar(serv.person, stdBg)}
-                            <div class="role-info">
-                                <h4>${serv.type}</h4>
-                                <p>${serv.person}</p>
-                            </div>
+                            <div class="role-info"><h4>${serv.type}</h4><p>${serv.person}</p></div>
+                            <button class="edit-swap-btn" style="${editStyle}" onclick="openSwapModal('${item.id}', 'service', ${servIndex}, '${serv.person}', '${item.date}')">✏️</button>
                         </div>
                     `;
                 });
 
                 let avisosHtml = '';
                 if (!isPast) {
-                    // LIMPEZA: Apenas os detalhes, sem listas duplicadas
-                    const listaDetalhes = avisosGerais.map(av => 
-                        `<div class="detail-row">
-                            <span class="detail-title">${av.id}) ${av.titulo}</span>
-                            <span class="detail-text">- ${av.info}</span>
-                         </div>`
+                    const listaDetalhes = avisosData.map(av => 
+                        `<div class="detail-row"><span class="detail-title">${av.id}) ${av.titulo}</span><span class="detail-text">- ${av.info}</span></div>`
                     ).join('');
 
                     avisosHtml = `
                         <div class="avisos-box">
-                            <button class="avisos-btn" onclick="toggleScript(this)">
-                                <span>📋 AVISOS</span>
-                                <span>▼</span>
-                            </button>
-                            <div class="avisos-content">
-                                ${listaDetalhes}
-                            </div>
+                            <button class="edit-avisos-btn" style="${editStyle}" onclick="openAvisosModal()">✏️ Editar Avisos</button>
+                            <button class="avisos-btn" onclick="toggleScript(this)"><span>📋 AVISOS</span><span>▼</span></button>
+                            <div class="avisos-content">${listaDetalhes}</div>
                         </div>
                     `;
                 }
@@ -286,18 +325,10 @@
                 return `
                     <div class="card ${themeClass} ${statusClass}">
                         <div class="card-header-flex">
-                            <div class="date-display">
-                                <span class="date-day">${d}</span>
-                                <span class="date-month">FEV</span>
-                            </div>
-                            <div class="day-title">
-                                <h3>${item.day}</h3>
-                                <span>Culto de Adoração</span>
-                            </div>
+                            <div class="date-display"><span class="date-day">${d}</span><span class="date-month">FEV</span></div>
+                            <div class="day-title"><h3>${item.day}</h3><span>Culto de Adoração</span></div>
                         </div>
-                        <div class="roles-container">
-                            ${rolesHtml}
-                        </div>
+                        <div class="roles-container">${rolesHtml}</div>
                         ${avisosHtml}
                     </div>
                 `;
@@ -308,17 +339,94 @@
 
         function toggleScript(btn) {
             const content = btn.nextElementSibling;
-            const arrow = btn.querySelector('span:last-child');
-            if (content.classList.contains('open')) {
-                content.classList.remove('open');
-                arrow.innerHTML = '▼';
-            } else {
-                content.classList.add('open');
-                arrow.innerHTML = '▲';
-            }
+            content.classList.toggle('open');
+            btn.querySelector('span:last-child').innerHTML = content.classList.contains('open') ? '▲' : '▼';
         }
 
-        render();
+        // ========================
+        // 5. FUNÇÕES DE EDIÇÃO
+        // ========================
+        
+        function openLoginModal() { document.getElementById('modal-login').style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        
+        function checkLogin() {
+            if(document.getElementById('admin-pass').value === ADMIN_PASS) {
+                isAdmin = true;
+                document.getElementById('btn-login-header').innerText = "🔓 Modo Edição";
+                document.getElementById('btn-login-header').style.background = "#10B981";
+                closeModal('modal-login');
+                render();
+            } else { alert("Senha incorreta!"); }
+        }
+
+        // TROCA DE ESCALA
+        let currentSwap = null;
+        function openSwapModal(docId, type, index, currentName, date) {
+            currentSwap = { docId, type, index };
+            document.getElementById('swap-info').innerHTML = `Trocar <strong>${currentName}</strong> no dia ${date}?`;
+            const select = document.getElementById('swap-select');
+            select.innerHTML = Object.keys(photoMap).map(name => `<option value="${name}" ${name === currentName ? 'selected' : ''}>${name}</option>`).join('');
+            document.getElementById('modal-swap').style.display = 'flex';
+        }
+
+        function confirmSwap() {
+            const newName = document.getElementById('swap-select').value;
+            const item = escalaData.find(i => i.id === currentSwap.docId);
+            if (currentSwap.type === 'dirigente') item.dirigente = newName;
+            else item.services[currentSwap.index].person = newName;
+
+            if(db) db.collection("escala").doc(currentSwap.docId).update(item);
+            closeModal('modal-swap');
+            render();
+        }
+
+        // AVISOS DINÂMICOS
+        function openAvisosModal() {
+            const container = document.getElementById('avisos-container');
+            container.innerHTML = ''; 
+            avisosData.forEach(av => { createAvisoInput(av.titulo, av.info); });
+            document.getElementById('modal-avisos').style.display = 'flex';
+        }
+
+        function createAvisoInput(titulo = '', info = '') {
+            const container = document.getElementById('avisos-container');
+            const div = document.createElement('div');
+            div.className = 'aviso-edit-row';
+            div.innerHTML = `
+                <button class="btn-remove-aviso" onclick="this.parentElement.remove()">🗑️</button>
+                <label style="font-size:0.8rem; color:#666; display:block; margin-bottom:4px;">Título</label>
+                <input type="text" class="input-titulo" value="${titulo}" placeholder="Título">
+                <label style="font-size:0.8rem; color:#666; display:block; margin-bottom:4px;">Informação</label>
+                <textarea class="input-info" rows="2" placeholder="Detalhes">${info}</textarea>
+            `;
+            container.appendChild(div);
+        }
+
+        function addNewAvisoField() {
+            createAvisoInput();
+            const modal = document.querySelector('#modal-avisos .modal');
+            setTimeout(() => modal.scrollTop = modal.scrollHeight, 100);
+        }
+
+        function saveAvisos() {
+            const container = document.getElementById('avisos-container');
+            const rows = container.querySelectorAll('.aviso-edit-row');
+            const novosAvisos = [];
+            rows.forEach((row, index) => {
+                const titulo = row.querySelector('.input-titulo').value;
+                const info = row.querySelector('.input-info').value;
+                if(titulo.trim() || info.trim()) {
+                    novosAvisos.push({ id: index + 1, titulo: titulo, info: info });
+                }
+            });
+            avisosData = novosAvisos;
+            if(db) db.collection("avisos").doc("geral").update({ items: novosAvisos });
+            closeModal('modal-avisos');
+            render();
+        }
+
+        loadData();
     </script>
 </body>
 </html>
